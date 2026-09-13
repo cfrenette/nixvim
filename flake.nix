@@ -9,6 +9,12 @@
 
   outputs =
     inputs@{ flake-parts, nixvim, ... }:
+    let
+      presets = {
+        java = ./modules/presets/java.nix;
+        rust = ./modules/presets/rust.nix;
+      };
+    in
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
         "x86_64-linux"
@@ -17,31 +23,45 @@
         "aarch64-darwin"
       ];
 
-      # Optional add-ons, composed via `packages.default.extendModules`.
-      # The bash and nix presets are already imported by the base config.
-      flake.presets = {
-        java = ./modules/presets/java.nix;
-        rust = ./modules/presets/rust.nix;
-      };
+      flake.presets = presets;
 
       perSystem =
-        { system, ... }:
-        {
-          packages.default =
-            let
-              # Present the eval result as a derivation whose `.extendModules`
-              # yields another such derivation, so extensions chain.
-              toPackage =
-                eval:
-                eval.config.build.package
-                // {
-                  extendModules = args: toPackage (eval.extendModules args);
-                };
-            in
-            toPackage (nixvim.lib.evalNixvim {
+        { lib, system, ... }:
+        let
+          # Present the eval result as a derivation whose `.extendModules`
+          # yields another such derivation, so extensions chain.
+          toPackage =
+            eval:
+            eval.config.build.package
+            // {
+              extendModules = args: toPackage (eval.extendModules args);
+              extend = module: toPackage (eval.extendModules { modules = [ module ]; });
+            };
+
+          mkEval =
+            extraModules:
+            nixvim.lib.evalNixvim {
               inherit system;
-              modules = [ ./modules ];
-            });
+              modules = [ ./modules ] ++ extraModules;
+            };
+
+          mkNixvim = extraModules: toPackage (mkEval extraModules);
+        in
+        {
+          packages.default = mkNixvim [ ];
+
+          # Skip tests for systems where there are no helpers
+          checks = lib.optionalAttrs (nixvim.lib ? ${system}) (
+            import ./tests {
+              inherit
+                lib
+                mkEval
+                mkNixvim
+                presets
+                ;
+              nixvimLib = nixvim.lib.${system};
+            }
+          );
         };
     };
 }

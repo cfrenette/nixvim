@@ -13,7 +13,8 @@ nix run github:cfrenette/nixvim
 
 `packages.<system>.default` is a wrapped `nvim` derivation that also carries
 `.extendModules`. It takes the same arguments as Nixvim's, and returns another
-such derivation — so extensions chain.
+such derivation — so extensions chain. (`.extend`, taking a single module, is
+also present for parity with Nixvim's own packages.)
 
 ```nix
 # flake.nix
@@ -78,8 +79,6 @@ nixvim.packages.${system}.default.extendModules {
 Presets ship editor config, not toolchains. `rustc`, `cargo`, `rustfmt`,
 `jdtls` and `google-java-format` are expected on `PATH` from the project's
 devShell, where their versions can track the project rather than this flake.
-Bash and Nix are the exception — they are in the base config and fully
-self-contained, since their tooling is small.
 
 Extensions chain, so presets and project config compose freely:
 
@@ -97,7 +96,7 @@ Completion (`cmp` + `luasnip`), LSP, formatting (`conform`), `telescope`,
 `treesitter`, `lualine`, and the `gruvbox-material` colorscheme.
 
 Bundled tooling: `bash-language-server`, `beautysh`, `nixd`, `nixfmt`,
-`ripgrep`, `bat`, `git`, `wl-clipboard`.
+`ripgrep`, and `wl-clipboard` (via the `wl-copy` clipboard provider).
 
 ### Keymaps
 
