@@ -38,14 +38,14 @@
               extend = module: toPackage (eval.extendModules { modules = [ module ]; });
             };
 
-          mkEval =
+          mkNixvim =
             extraModules:
-            nixvim.lib.evalNixvim {
-              inherit system;
-              modules = [ ./modules ] ++ extraModules;
-            };
-
-          mkNixvim = extraModules: toPackage (mkEval extraModules);
+            toPackage (
+              nixvim.lib.evalNixvim {
+                inherit system;
+                modules = [ ./modules ] ++ extraModules;
+              }
+            );
         in
         {
           packages.default = mkNixvim [ ];
@@ -53,12 +53,7 @@
           # Skip tests for systems where there are no helpers
           checks = lib.optionalAttrs (nixvim.lib ? ${system}) (
             import ./tests {
-              inherit
-                lib
-                mkEval
-                mkNixvim
-                presets
-                ;
+              inherit mkNixvim presets;
               nixvimLib = nixvim.lib.${system};
             }
           );
