@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ inputs, lib, ... }:
 {
   imports = [
     ./core/cmp.nix
