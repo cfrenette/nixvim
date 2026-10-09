@@ -7,7 +7,7 @@
     nixvim = {
       url = "github:nix-community/nixvim";
       # Deduplicate packages, slight risk of breakage
-      # upstream only tests against their pinned input
+      # upstream only tests against their pinned input.
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -48,7 +48,11 @@
             toPackage (
               nixvim.lib.evalNixvim {
                 inherit system;
-                modules = [ ./modules ] ++ extraModules;
+                modules = [
+                  ./modules
+                  { nixpkgs.source = lib.mkDefault inputs.nixpkgs; }
+                ]
+                ++ extraModules;
               }
             );
         in
