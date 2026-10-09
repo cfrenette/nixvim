@@ -2,9 +2,13 @@
   description = "A standalone, extensible Nixvim configuration";
 
   inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixvim = {
       url = "github:nix-community/nixvim";
+      # Deduplicate packages, slight risk of breakage
+      # upstream only tests against their pinned input.
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -44,7 +48,11 @@
             toPackage (
               nixvim.lib.evalNixvim {
                 inherit system;
-                modules = [ ./modules ] ++ extraModules;
+                modules = [
+                  ./modules
+                  { nixpkgs.source = lib.mkDefault inputs.nixpkgs; }
+                ]
+                ++ extraModules;
               }
             );
         in
